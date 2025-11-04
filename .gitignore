@@ -1,0 +1,18 @@
+# Node.js dependencies
+node_modules/
+package-lock.json
+
+# Production build output
+dist/
+build/
+
+# IDEs and editors
+.idea/
+.vscode/
+
+# Logs
+logs/
+*.log
+
+# Environment variables
+.env
