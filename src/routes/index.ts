@@ -1,21 +1,36 @@
-import express from "express";
-import { userRoutes, productRoutes, authRoutes } from "../modules";
+import { Application, NextFunction, Request, Response } from "express";
+import {
+  authRoutes,
+  mediaRoutes,
+  userRoutes,
+} from "../modules";
 import { MainRoute } from "../common";
 
-const allRoutes: MainRoute[] = [...userRoutes, ...productRoutes, ...authRoutes];
+const allRoutes: MainRoute[] = [
+  ...authRoutes,
+  ...userRoutes,
+  ...mediaRoutes
+];
 
-const router = express.Router();
-allRoutes.forEach((route) => {
-  const controller = new route.controller();
-  const handler = controller[route.action].bind(controller);
+export const initializeRoutes = (app: Application): void => {
+  allRoutes.forEach((route) => {
+    const controllerInstance = new route.controller();
 
-  const fullRoute = `/api/v1${route.route}`;
+    const middlewares = route.middlewares || [];
+    app[route.method](
+      `/api/v1${route.route}`,
+      ...middlewares,
+      async (req: Request, res: Response, next: NextFunction) => {
+        try {
+          const result = await controllerInstance[route.action](req, res, next);
 
-  if (route.middlewares && route.middlewares.length > 0) {
-    router[route.method](fullRoute, ...route.middlewares, handler);
-  } else {
-    router[route.method](fullRoute, handler);
-  }
-});
-
-export default router;
+          if (result !== undefined && !res.headersSent) {
+            res.json(result);
+          }
+        } catch (error) {
+          next(error);
+        }
+      }
+    );
+  });
+};

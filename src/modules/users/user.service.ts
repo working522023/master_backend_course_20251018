@@ -1,39 +1,70 @@
-import { Repository } from "typeorm";
-import { User } from "./user.entity";
-import { AppDataSource, BadRequestException, ConflictException, NotFoundException } from "../../core";
-import { CreateUserDto } from "./user.dto";
+import { ILike, Repository } from 'typeorm';
+import { AppDataSource } from '../../core';
+import { User } from './user.entity';
+import { CreateUserDto, UpdateUserDto } from './user.dto';
+import {
+  NotFoundException,
+  ConflictException,
+} from '../../core';
 
 export class UserService {
-  private userRepo: Repository<User> = AppDataSource.getRepository(User);
-
-  // Get All User
-  async findAll(): Promise<User[]> {
-    const users =  await this.userRepo.find();
-    return users;
+  private get repo(): Repository<User> {
+    return AppDataSource.getRepository(User);
   }
 
-  // Get By User ID
-  async findById(id: string): Promise<User> {
-    const user = await this.userRepo.findOne({ where: { id} });
+  async findAll(
+    page = 1,
+    limit = 10,
+    search?: string,
+    sortBy: keyof User = 'createdAt',
+    sortOrder: 'ASC' | 'DESC' = 'DESC'
+  ) {
+    const [data, total] = await this.repo.findAndCount({
+      where: search
+        ? [
+            { firstName: ILike(`%${search}%`) },
+            { lastName: ILike(`%${search}%`) },
+            { email: ILike(`%${search}%`) },
+          ]
+        : {},
+      order: { [sortBy]: sortOrder },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+        hasNextPage: page * limit < total,
+        hasPrevPage: page > 1,
+      },
+    };
+  }
+
+  async findOne(id: string) {
+    const user = await this.repo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('User not found');
     return user;
   }
 
-  // Create User
-  async createUser(dto : CreateUserDto): Promise<User> {
-    try {
-        const existing = await this.userRepo.findOne({ where: { email: dto.email } });
-        if (existing) throw new ConflictException('Email already in use');
-        const user = this.userRepo.create(dto);
-        return this.userRepo.save(user);
-    } catch (error) {
-        throw new BadRequestException('Please');
-    }
+  async create(input: Partial<User>) {
+    const user = this.repo.create(input);
+    return this.repo.save(user);
   }
 
-  // Update User
+  async update(id: string, input: Partial<User>) {
+    const user = await this.findOne(id);
+    Object.assign(user, input);
+    return this.repo.save(user);
+  }
 
-
-  // Delete User
-
+  async delete(id: string) {
+    const user = await this.findOne(id);
+    await this.repo.remove(user);
+    return { message: 'User deleted successfully' };
+  }
 }

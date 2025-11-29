@@ -1,3 +1,3 @@
 export * from "./users";
-export * from "./products";
 export * from "./auth";
+export * from "./media";

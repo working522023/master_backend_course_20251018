@@ -1,88 +1,87 @@
-import { ErrorDetail } from "../../common";
+import { HttpExceptionOptions } from "../../common";
 
-export class BaseException<T extends ErrorDetail = ErrorDetail> extends Error {
-  public readonly statusCode: number;
-  public readonly errors?: T[];
-  public readonly timestamp: string;
-  public readonly correlationId?: string;
+export class HttpException extends Error {
+  public status: number;
+  public code?: string;
+  public details?: any;
 
-  constructor(message: string, statusCode: number, errors?: T[], correlationId?: string) {
+  constructor(message = "Internal Server Error", options: HttpExceptionOptions = {}) {
     super(message);
-    Object.setPrototypeOf(this, new.target.prototype);
-
-    this.name = this.constructor.name;
-    this.statusCode = statusCode;
-    this.errors = errors;
-    this.correlationId = correlationId;
-    this.timestamp = new Date().toISOString();
-
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, this.constructor);
-    }
-  }
-
-  public toJSON(): Record<string, unknown> {
-    return {
-      name: this.name,
-      message: this.message,
-      statusCode: this.statusCode,
-      errors: this.errors,
-      timestamp: this.timestamp,
-      correlationId: this.correlationId,
-    };
+    this.name = "HttpException";
+    this.status = options.status ?? 500;
+    this.code = options.code ?? (this.status === 500 ? "INTERNAL_SERVER_ERROR" : "ERROR");
+    this.details = options.details;
+    Error.captureStackTrace?.(this, this.constructor);
   }
 }
 
-export class BadRequestException extends BaseException {
-  constructor(message = 'Bad request', errors?: ErrorDetail[], correlationId?: string) {
-    super(message, 400, errors, correlationId);
+export class StorageException extends Error {
+  public readonly code: string;
+  public readonly details?: any;
+
+  constructor(message: string, code = "STORAGE_ERROR", details?: any) {
+    super(message);
+    this.code = code;
+    this.details = details;
   }
 }
 
-export class InputBadRequestException extends BadRequestException {
-  constructor(message = 'Invalid input', errors?: ErrorDetail[], correlationId?: string) {
-    super(message, errors, correlationId);
+
+export class BadRequestException extends HttpException {
+  constructor(message = "Bad Request", details?: any) {
+    super(message, { status: 400, code: "BAD_REQUEST", details });
+  }
+}
+export class NotFoundException extends HttpException {
+  constructor(message = "Not Found", details?: any) {
+    super(message, { status: 404, code: "NOT_FOUND", details });
   }
 }
 
-export class UnauthorizedException extends BaseException {
-  constructor(message = 'Unauthorized', errors?: ErrorDetail[], correlationId?: string) {
-    super(message, 401, errors, correlationId);
+export class InputBadRequestException extends HttpException {
+  constructor(message = "Invalid input", details?: any) {
+    super(message, { status: 404, code: "INVALID_INPUT", details });
   }
 }
 
-export class ForbiddenException extends BaseException {
-  constructor(message = 'Forbidden', errors?: ErrorDetail[], correlationId?: string) {
-    super(message, 403, errors, correlationId);
+export class ValidationException extends HttpException {
+  constructor(message = "Validation", details?: any) {
+    super(message, { status: 400, code: "VALIDATION", details });
   }
 }
 
-export class NotFoundException extends BaseException {
-  constructor(message = 'Resource not found', errors?: ErrorDetail[], correlationId?: string) {
-    super(message, 404, errors, correlationId);
+export class UnauthorizedException extends HttpException {
+  constructor(message = "Unauthorized", details?: any) {
+    super(message, { status: 401, code: "UNAUTHORIZED", details });
   }
 }
 
-export class ConflictException extends BaseException {
-  constructor(message = 'Resource already exists', errors?: ErrorDetail[], correlationId?: string) {
-    super(message, 409, errors, correlationId);
+export class ForbiddenException extends HttpException {
+  constructor(message = "Forbidden", details?: any) {
+    super(message, { status: 403, code: "FORBIDDEN", details });
   }
 }
 
-export class AlreadyException extends ConflictException {
-  constructor(message = 'Resource already exists', errors?: ErrorDetail[], correlationId?: string) {
-    super(message, errors, correlationId);
+export class ConflictException extends HttpException {
+  constructor(message = "Resource already exists", details?: any) {
+    super(message, { status: 409, code: "CONFLICT", details });
   }
 }
 
-export class InternalServerException extends BaseException {
-  constructor(message = 'Internal server error', correlationId?: string) {
-    super(message, 500, undefined, correlationId);
+export class AlreadyException extends HttpException {
+  constructor(message = "Resource already exists", details?: any) {
+    super(message, { status: 409, code: "ALREADY", details });
   }
 }
 
-export class OKException extends BaseException {
-  constructor(message = 'OK', correlationId?: string) {
-    super(message, 200, undefined, correlationId);
+export class InternalServerException extends HttpException {
+  constructor(message = "Internal server error", details?: any) {
+    super(message, { status: 500, code: "INTERNAL_SERVER_ERROR", details });
+  }
+}
+
+export class OKException extends HttpException {
+  constructor(message = "OK", details?: any) {
+    super(message, { status: 200, code: "OK", details });
   }
 }

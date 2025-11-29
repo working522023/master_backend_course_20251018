@@ -1,17 +1,23 @@
+// server.ts
 import { AppDataSource, env } from './core';
-import { app } from './app';
+import { startApolloServer } from './app';
 
-(() => {
+const startServer = async () => {
   try {
-    AppDataSource.initialize()
-    .then(() => {
-      console.log("Database connected");
-    })
-    .catch((error) => console.error("Database connection error:", error));
+    // 1. Connect to database
+    await AppDataSource.initialize();
+    console.log('✅ Database connected');
 
+    // 2. Start Apollo + Express server
+    const httpServer = await startApolloServer();
     const PORT = env.PORT || 5000;
-    app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-  } catch (error) {
-    console.error('Database connection failed:', error);
+
+    httpServer.listen(PORT, () => {
+      console.log(`🚀 Server running at http://localhost:${PORT}/graphql`);
+    });
+  } catch (err) {
+    console.error('❌ Server failed to start', err);
   }
-})();
+};
+
+startServer();

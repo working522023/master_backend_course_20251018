@@ -1,7 +1,7 @@
 import { Transform } from "class-transformer";
 import { IsEmail, IsEmpty, IsNotEmpty, IsOptional, IsString, IsStrongPassword, Matches, MaxLength, MinLength } from "class-validator";
 import { Column } from "typeorm";
-import { UserRole } from "../../common";
+import { UserRoleEnum } from "../../common";
 
 export class CreateUserDto {
   @Column("varchar", { length: 30 })
@@ -45,7 +45,7 @@ export class CreateUserDto {
   @IsOptional()
   address?: string;
 
-  @Column("varchar", { length: 20, default: UserRole.USER })
+  @Column("varchar", { length: 20, default: UserRoleEnum.USER })
   @IsString()
   @IsNotEmpty()
   role?: string;
@@ -56,15 +56,15 @@ export class UpdateUserDto {
   @Column("varchar", { length: 30 })
   @IsString()
   @IsNotEmpty()
-  firstName?: string;
-
-  @Column("varchar", { length: 30, nullable: true })
-  @IsString()
-  @IsEmpty()
-  lastName?: string;
-
+  name?: string;
+  
   @Column("text", { nullable: true })
   @IsString()
   @IsOptional()
   address?: string;
+
+  @Column("text", { nullable: true })
+  @IsString()
+  @IsOptional()
+  status?: string;
 }

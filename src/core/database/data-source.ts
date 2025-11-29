@@ -1,6 +1,6 @@
 import { DataSource } from 'typeorm';
 import { env } from '../configs';
-import { User } from '../../modules';
+import { Media, User } from '../../modules';
 
 
 export const AppDataSource = new DataSource({
@@ -12,6 +12,8 @@ export const AppDataSource = new DataSource({
   database: env.DB_NAME,
   synchronize: true,
   logging: ['error'],
-  entities: [User],
+  entities: [User, Media],
   migrations: [],
+  charset: 'utf8mb4',
+  timezone: 'Z',
 });

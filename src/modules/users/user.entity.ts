@@ -1,7 +1,6 @@
 import { Transform } from "class-transformer";
 import {
   IsEmail,
-  IsEmpty,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -11,6 +10,9 @@ import {
   MaxLength,
   MinLength,
 } from "class-validator";
+import { v4 as uuidv4 } from "uuid";
+
+
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -18,13 +20,14 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   BeforeInsert,
+  DeleteDateColumn,
 } from "typeorm";
-import { UserRole, UserStatus } from "../../common";
+import { UserRoleEnum, UserStatus } from "../../common";
 import bcrypt from "bcrypt";
 
 @Entity("users")
 export class User {
-  @PrimaryGeneratedColumn()
+  @PrimaryGeneratedColumn("uuid")
   @IsUUID()
   id!: string;
 
@@ -35,13 +38,8 @@ export class User {
 
   @Column("varchar", { length: 30, nullable: true })
   @IsString()
-  @IsEmpty()
+  @IsNotEmpty()
   lastName?: string;
-
-   @Column("varchar", { length: 30, nullable: true })
-  @IsString()
-  @IsEmpty()
-  phone?: string;
 
   @Column({ unique: true })
   @IsEmail()
@@ -79,7 +77,7 @@ export class User {
   @IsNotEmpty()
   status?: string;
 
-  @Column("varchar", { length: 20, default: UserRole.USER })
+  @Column("varchar", { length: 20, default: UserRoleEnum.USER })
   @IsString()
   @IsNotEmpty()
   role?: string;
@@ -102,9 +100,18 @@ export class User {
   @IsOptional()
   updatedAt?: Date;
 
-  @UpdateDateColumn({ type: "datetime", nullable: true })
-  @IsOptional()
+  @Column({ type: 'boolean', default: false })
+  isDeleted!: boolean;
+
+  @DeleteDateColumn({ type: "datetime", nullable: true })
   deletedAt?: Date;
+
+  @BeforeInsert()
+    generateId() {
+      if (!this.id) {
+        this.id = uuidv4();
+      }
+    }
 
   @BeforeInsert()
   async hashPassword(): Promise<void> {

@@ -1,52 +1,94 @@
 import { Request, Response, NextFunction } from "express";
+import { AuthService } from "./auth.service";
+import { LoginDto, RegisterDto } from "./auth.dto";
 
 export class AuthController {
-  register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const user = {
-        username: "james.rd@gmail.com",
-        password: "strPassword",
-      };
-      res
-        .status(200)
-        .json({
-          status: 200,
-          message: "Register successfully.",
-          data: user
-        });
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  private readonly service = new AuthService();
 
-  login = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      const user = {
-        username: "james.rd@gmail.com",
-        password: "strPassword",
-      };
-      res
-        .status(200)
-        .json({
-          status: 200,
-          message: "Login successfully.",
-          data: user
-        });
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  /**
+ * @swagger
+ * tags:
+ *   name: Auth
+ *   description: Authentication APIs
+ */
 
-  logout = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-    try {
-      res
-        .status(200)
-        .json({
+
+  /**
+ * @swagger
+ * /auth/login:
+ *   post:
+ *     summary: Login user
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login success
+ */
+
+  async login(req: Request, res: Response, next: NextFunction) {
+      try {
+        const dto: LoginDto = req.body;
+        const result = await this.service.login(dto);
+  
+        res.status(200).json({
           status: 200,
-          message: "Logout successfully.",
+          message: "Login successful.",
+          token: result.token,
         });
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+
+    /**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     summary: Register a new user
+ *     tags: [Auth]
+ *     security: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
+ *               fullName:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: User registered
+ */
+
+  async register(req: Request, res: Response, next: NextFunction) {
+    try {
+      const dto: RegisterDto = req.body;
+      const created =  await this.service.register(dto);
+      res.status(201).json({
+        status: 201,
+        message: "User registered successfully.",
+        data: created,
+      });
     } catch (error) {
       console.log(error);
     }
-  };
+  }
+
 }
